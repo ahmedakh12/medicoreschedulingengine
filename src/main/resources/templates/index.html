@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>MediCore Scheduling Engine</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .container { text-align: center; background: white; padding: 60px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); max-width: 600px; width: 90%; }
+        h1 { font-size: 2.2rem; color: #2c3e50; margin-bottom: 10px; }
+        p { color: #7f8c8d; margin-bottom: 40px; font-size: 1.1rem; }
+        .nav-links { display: flex; flex-direction: column; gap: 12px; }
+        a.btn { display: block; padding: 14px 20px; background: #3498db; color: white; text-decoration: none; border-radius: 8px; font-size: 1rem; transition: background 0.2s; }
+        a.btn:hover { background: #2980b9; }
+        a.btn.green { background: #27ae60; }
+        a.btn.green:hover { background: #219a52; }
+        a.btn.purple { background: #8e44ad; }
+        a.btn.purple:hover { background: #7d3c98; }
+        a.btn.orange { background: #e67e22; }
+        a.btn.orange:hover { background: #d35400; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🏥 MediCore</h1>
+    <p>OS-Based Hospital Process Scheduling Simulation</p>
+    <div class="nav-links">
+        <a href="/dashboard" class="btn"> Dashboard</a>
+        <a href="/patients" class="btn green">Manage Patients</a>
+        <a href="/simulation" class="btn purple"> Run Simulation</a>
+        <a href="/history" class="btn orange"> View History</a>
+    </div>
+</div>
+</body>
+</html>

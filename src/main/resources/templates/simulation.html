@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Simulation - MediCore</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f0f2f5; }
+        nav { background: #2c3e50; padding: 14px 30px; display: flex; gap: 20px; align-items: center; }
+        nav a { color: white; text-decoration: none; font-size: 0.95rem; }
+        nav a:hover { text-decoration: underline; }
+        nav .brand { font-weight: bold; font-size: 1.1rem; margin-right: auto; }
+        .page { padding: 30px; max-width: 1100px; margin: auto; }
+        h2 { color: #2c3e50; margin-bottom: 20px; }
+        h3 { color: #2c3e50; margin-bottom: 14px; }
+        .card { background: white; border-radius: 10px; padding: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); margin-bottom: 24px; }
+        .dept-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 10px; }
+        .dept-btn { padding: 20px; border: 2px solid #ddd; border-radius: 10px; background: white; cursor: pointer; font-size: 0.95rem; text-align: center; transition: all 0.2s; }
+        .dept-btn:hover { border-color: #3498db; background: #ebf5fb; }
+        .dept-btn.selected { border-color: #3498db; background: #ebf5fb; font-weight: bold; }
+        .dept-btn .name { font-size: 1rem; font-weight: bold; color: #2c3e50; margin-bottom: 6px; }
+        .dept-btn .algos { font-size: 0.78rem; color: #7f8c8d; }
+        .run-btn { padding: 14px 40px; background: #8e44ad; color: white; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; margin-top: 16px; }
+        .run-btn:hover { background: #7d3c98; }
+        .run-btn:disabled { background: #bdc3c7; cursor: not-allowed; }
+        .spinner { display: none; text-align: center; padding: 20px; color: #7f8c8d; }
+        .results { display: none; }
+        .winner-banner { background: #d5f5e3; border-left: 5px solid #27ae60; padding: 16px 20px; border-radius: 8px; margin-bottom: 20px; }
+        .winner-banner h3 { color: #1e8449; margin: 0; }
+        .comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+        .algo-card { border: 1px solid #ddd; border-radius: 8px; padding: 20px; }
+        .algo-card h4 { color: #2c3e50; margin-bottom: 14px; font-size: 1rem; }
+        .metric-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0f0; font-size: 0.9rem; }
+        .metric-row:last-child { border-bottom: none; }
+        .metric-label { color: #7f8c8d; }
+        .metric-value { font-weight: bold; color: #2c3e50; }
+        .metric-value.winner { color: #27ae60; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+        th { background: #2c3e50; color: white; padding: 9px 12px; text-align: left; }
+        td { padding: 9px 12px; border-bottom: 1px solid #eee; }
+        tr:hover td { background: #f8f9fa; }
+        .gantt-container { overflow-x: auto; margin-top: 10px; }
+        .gantt { display: flex; height: 44px; border: 1px solid #ddd; border-radius: 6px; overflow: hidden; min-width: 100%; }
+        .gantt-block { display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: white; font-weight: bold; border-right: 1px solid rgba(255,255,255,0.3); overflow: hidden; white-space: nowrap; padding: 0 4px; cursor: default; }
+        .tab-btns { display: flex; gap: 8px; margin-bottom: 16px; }
+        .tab-btn { padding: 8px 18px; border: 1px solid #ddd; border-radius: 6px; background: white; cursor: pointer; font-size: 0.9rem; }
+        .tab-btn.active { background: #2c3e50; color: white; border-color: #2c3e50; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .msg { padding: 10px; border-radius: 6px; margin-bottom: 16px; font-size: 0.9rem; }
+        .msg.error { background: #fadbd8; color: #922b21; }
+    </style>
+</head>
+<body>
+<nav>
+    <span class="brand">🏥 MediCore</span>
+    <a href="/">Home</a>
+    <a href="/dashboard">Dashboard</a>
+    <a href="/patients">Patients</a>
+    <a href="/simulation">Simulation</a>
+    <a href="/history">History</a>
+</nav>
+
+<div class="page">
+    <h2>⚙️ Run Simulation</h2>
+
+    <!-- Department Selection -->
+    <div class="card">
+        <h3>1. Select Department</h3>
+        <div class="dept-grid">
+            <div class="dept-btn" onclick="selectDept('ER', this)">
+                <div class="name">🚨 Emergency (ER)</div>
+                <div class="algos">Preemptive Priority vs Multilevel Queue</div>
+            </div>
+            <div class="dept-btn" onclick="selectDept('OPD', this)">
+                <div class="name">🏥 Outpatient (OPD)</div>
+                <div class="algos">FCFS vs Round Robin</div>
+            </div>
+            <div class="dept-btn" onclick="selectDept('ICU', this)">
+                <div class="name">💉 Intensive Care (ICU)</div>
+                <div class="algos">SRTF vs EDF</div>
+            </div>
+            <div class="dept-btn" onclick="selectDept('SURGERY', this)">
+                <div class="name">🔪 Surgery</div>
+                <div class="algos">SJF vs HRRN</div>
+            </div>
+        </div>
+        <div id="errorMsg"></div>
+        <button class="run-btn" id="runBtn" onclick="runSimulation()" disabled>
+            ▶ Run Simulation
+        </button>
+    </div>
+
+    <!-- Spinner -->
+    <div class="spinner" id="spinner">⏳ Running simulation...</div>
+
+    <!-- Results -->
+    <div class="results" id="results">
+
+        <!-- Winner Banner -->
+        <div class="winner-banner">
+            <h3>🏆 Overall Winner: <span id="winnerName">-</span></h3>
+            <p style="font-size:0.85rem; color:#555; margin-top:6px;">
+                WT Winner: <b id="wtWinner">-</b> &nbsp;|&nbsp;
+                TT Winner: <b id="ttWinner">-</b> &nbsp;|&nbsp;
+                RT Winner: <b id="rtWinner">-</b>
+            </p>
+        </div>
+
+        <!-- Metrics Comparison -->
+        <div class="card">
+            <h3>📊 Algorithm Comparison</h3>
+            <div class="comparison">
+                <div class="algo-card" id="algo1Card">
+                    <h4 id="algo1Name">Algorithm 1</h4>
+                    <div class="metric-row">
+                        <span class="metric-label">Avg Waiting Time</span>
+                        <span class="metric-value" id="algo1WT">-</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Avg Turnaround Time</span>
+                        <span class="metric-value" id="algo1TT">-</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Avg Response Time</span>
+                        <span class="metric-value" id="algo1RT">-</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Total Patients</span>
+                        <span class="metric-value" id="algo1TP">-</span>
+                    </div>
+                </div>
+                <div class="algo-card" id="algo2Card">
+                    <h4 id="algo2Name">Algorithm 2</h4>
+                    <div class="metric-row">
+                        <span class="metric-label">Avg Waiting Time</span>
+                        <span class="metric-value" id="algo2WT">-</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Avg Turnaround Time</span>
+                        <span class="metric-value" id="algo2TT">-</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Avg Response Time</span>
+                        <span class="metric-value" id="algo2RT">-</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Total Patients</span>
+                        <span class="metric-value" id="algo2TP">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gantt Charts -->
+        <div class="card">
+            <h3>📅 Gantt Charts</h3>
+            <div class="tab-btns">
+                <button class="tab-btn active" onclick="switchTab('gantt1', this)">Algorithm 1</button>
+                <button class="tab-btn" onclick="switchTab('gantt2', this)">Algorithm 2</button>
+            </div>
+            <div class="tab-content active" id="gantt1">
+                <p id="gantt1Label" style="font-size:0.85rem;color:#7f8c8d;margin-bottom:8px;"></p>
+                <div class="gantt-container"><div class="gantt" id="gantt1Chart"></div></div>
+                <div id="gantt1Legend" style="margin-top:10px; font-size:0.8rem; display:flex; flex-wrap:wrap; gap:8px;"></div>
+            </div>
+            <div class="tab-content" id="gantt2">
+                <p id="gantt2Label" style="font-size:0.85rem;color:#7f8c8d;margin-bottom:8px;"></p>
+                <div class="gantt-container"><div class="gantt" id="gantt2Chart"></div></div>
+                <div id="gantt2Legend" style="margin-top:10px; font-size:0.8rem; display:flex; flex-wrap:wrap; gap:8px;"></div>
+            </div>
+        </div>
+
+        <!-- Per-Patient Metrics -->
+        <div class="card">
+            <h3>📋 Per-Patient Metrics</h3>
+            <div class="tab-btns">
+                <button class="tab-btn active" onclick="switchTab('table1', this)">Algorithm 1</button>
+                <button class="tab-btn" onclick="switchTab('table2', this)">Algorithm 2</button>
+            </div>
+            <div class="tab-content active" id="table1">
+                <table>
+                    <thead>
+                    <tr><th>Patient</th><th>Arrival</th><th>Burst</th><th>Priority</th><th>Completion</th><th>Waiting</th><th>Turnaround</th><th>Response</th></tr>
+                    </thead>
+                    <tbody id="metricsTable1"></tbody>
+                </table>
+            </div>
+            <div class="tab-content" id="table2">
+                <table>
+                    <thead>
+                    <tr><th>Patient</th><th>Arrival</th><th>Burst</th><th>Priority</th><th>Completion</th><th>Waiting</th><th>Turnaround</th><th>Response</th></tr>
+                    </thead>
+                    <tbody id="metricsTable2"></tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    let selectedDept = null;
+
+    function selectDept(dept, el) {
+        document.querySelectorAll('.dept-btn').forEach(b => b.classList.remove('selected'));
+        el.classList.add('selected');
+        selectedDept = dept;
+        document.getElementById('runBtn').disabled = false;
+        document.getElementById('errorMsg').innerHTML = '';
+    }
+
+    async function runSimulation() {
+        if (!selectedDept) return;
+
+        document.getElementById('spinner').style.display = 'block';
+        document.getElementById('results').style.display = 'none';
+        document.getElementById('runBtn').disabled = true;
+        document.getElementById('errorMsg').innerHTML = '';
+
+        try {
+            const res  = await fetch(`/api/simulation/run/${selectedDept}`, { method: 'POST' });
+            const data = await res.json();
+
+            if (!res.ok) {
+                document.getElementById('errorMsg').innerHTML =
+                    `<div class="msg error">${data}</div>`;
+                return;
+            }
+
+            displayResults(data);
+
+        } catch (err) {
+            document.getElementById('errorMsg').innerHTML =
+                `<div class="msg error">Server error. Is the backend running?</div>`;
+        } finally {
+            document.getElementById('spinner').style.display = 'none';
+            document.getElementById('runBtn').disabled = false;
+        }
+    }
+
+    function displayResults(data) {
+        const c = data.comparison;
+        const r1 = c.result1;
+        const r2 = c.result2;
+
+        // Winner banner
+        document.getElementById('winnerName').textContent = c.overallWinner;
+        document.getElementById('wtWinner').textContent   = c.winnerWaitingTime;
+        document.getElementById('ttWinner').textContent   = c.winnerTurnaroundTime;
+        document.getElementById('rtWinner').textContent   = c.winnerResponseTime;
+
+        // Algo 1 metrics
+        document.getElementById('algo1Name').textContent = r1.algorithmName;
+        document.getElementById('algo1WT').textContent   = r1.avgWaitingTime.toFixed(2);
+        document.getElementById('algo1TT').textContent   = r1.avgTurnaroundTime.toFixed(2);
+        document.getElementById('algo1RT').textContent   = r1.avgResponseTime.toFixed(2);
+        document.getElementById('algo1TP').textContent   = r1.totalPatients;
+
+        // Algo 2 metrics
+        document.getElementById('algo2Name').textContent = r2.algorithmName;
+        document.getElementById('algo2WT').textContent   = r2.avgWaitingTime.toFixed(2);
+        document.getElementById('algo2TT').textContent   = r2.avgTurnaroundTime.toFixed(2);
+        document.getElementById('algo2RT').textContent   = r2.avgResponseTime.toFixed(2);
+        document.getElementById('algo2TP').textContent   = r2.totalPatients;
+
+        // Highlight winners in green
+        highlightWinner('algo1WT', 'algo2WT', r1.avgWaitingTime,    r2.avgWaitingTime);
+        highlightWinner('algo1TT', 'algo2TT', r1.avgTurnaroundTime, r2.avgTurnaroundTime);
+        highlightWinner('algo1RT', 'algo2RT', r1.avgResponseTime,   r2.avgResponseTime);
+
+        // Gantt charts
+        renderGantt('gantt1Chart', 'gantt1Legend', 'gantt1Label', r1.ganttEntries, r1.algorithmName);
+        renderGantt('gantt2Chart', 'gantt2Legend', 'gantt2Label', r2.ganttEntries, r2.algorithmName);
+
+        // Per-patient tables
+        renderMetricsTable('metricsTable1', r1.patientMetrics);
+        renderMetricsTable('metricsTable2', r2.patientMetrics);
+
+        document.getElementById('results').style.display = 'block';
+        document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function highlightWinner(id1, id2, val1, val2) {
+        const el1 = document.getElementById(id1);
+        const el2 = document.getElementById(id2);
+        el1.classList.remove('winner');
+        el2.classList.remove('winner');
+        if (val1 <= val2) el1.classList.add('winner');
+        else              el2.classList.add('winner');
+    }
+
+    const COLOURS = [
+        '#4F86C6','#E8735A','#57C4AD','#F5A623','#9B59B6',
+        '#2ECC71','#E74C3C','#3498DB','#F39C12','#1ABC9C'
+    ];
+
+    function renderGantt(chartId, legendId, labelId, entries, algoName) {
+        const chart  = document.getElementById(chartId);
+        const legend = document.getElementById(legendId);
+        const label  = document.getElementById(labelId);
+
+        label.textContent = `Algorithm: ${algoName}`;
+
+        if (!entries || entries.length === 0) {
+            chart.innerHTML = '<span style="padding:10px;color:#999">No data</span>';
+            return;
+        }
+
+        // Assign colours per patient
+        const colourMap = {};
+        let ci = 0;
+        entries.forEach(e => {
+            if (!colourMap[e.patientId]) {
+                colourMap[e.patientId] = COLOURS[ci++ % COLOURS.length];
+            }
+        });
+
+        const total = entries[entries.length - 1].endTime - entries[0].startTime;
+
+        chart.innerHTML = entries.map(e => {
+            const width = ((e.endTime - e.startTime) / total * 100).toFixed(2);
+            const bg    = colourMap[e.patientId];
+            return `<div class="gantt-block" style="width:${width}%;background:${bg}" title="${e.patientName} [${e.startTime}-${e.endTime}]">
+                        ${e.patientName}
+                    </div>`;
+        }).join('');
+
+        // Legend
+        const seen = {};
+        legend.innerHTML = entries
+            .filter(e => { if (seen[e.patientId]) return false; seen[e.patientId] = true; return true; })
+            .map(e => `<span style="background:${colourMap[e.patientId]};color:white;padding:3px 8px;border-radius:4px;">${e.patientName}</span>`)
+            .join('');
+    }
+
+    function renderMetricsTable(tbodyId, metrics) {
+        const tbody = document.getElementById(tbodyId);
+        if (!metrics || metrics.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#999">No data</td></tr>';
+            return;
+        }
+        tbody.innerHTML = metrics.map(m => `
+            <tr>
+                <td>${m.patientName}</td>
+                <td>${m.arrivalTime}</td>
+                <td>${m.burstTime}</td>
+                <td>${m.priority}</td>
+                <td>${m.completionTime}</td>
+                <td>${m.waitingTime}</td>
+                <td>${m.turnaroundTime}</td>
+                <td>${m.responseTime}</td>
+            </tr>
+        `).join('');
+    }
+
+    function switchTab(tabId, btn) {
+        const parent = btn.closest('.card');
+        parent.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        parent.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        btn.classList.add('active');
+    }
+</script>
+</body>
+</html>
