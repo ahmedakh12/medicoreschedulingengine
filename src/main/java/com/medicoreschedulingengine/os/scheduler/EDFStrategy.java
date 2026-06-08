@@ -10,25 +10,42 @@ import org.springframework.stereotype.Component;
 import java.util.*;
 
 /**
- * Preemptive Priority Scheduling
+ * Earliest Deadline First (EDF) — Preemptive
  *
- * OS Concept  : The process with the highest priority (lowest priority number)
- *               always runs. A higher-priority arrival immediately preempts
- *               the current process.
- * Hospital Use: ER — a cardiac arrest patient (priority 1) instantly interrupts
- *               treatment of a lower-priority patient.
+ * OS Concept  : At every scheduling point, the process with the earliest
+ *               deadline gets the CPU. A newly arrived process with a closer
+ *               deadline immediately preempts the current process.
  *
- * Convention  : priority 1 = most critical, higher number = less critical.
+ * Hospital Use: ICU — patients whose condition is deteriorating rapidly
+ *               (closest deadline) receive immediate attention.
+ *               A patient with 2 hours left before critical threshold
+ *               preempts one with 5 hours remaining.
+ *
+ * Deadline Calculation:
+ *   Since our Patient entity does not have an explicit deadline field,
+ *   we derive it as:
+ *
+ *       deadline = arrivalTime + burstTime + priority
+ *
+ *   Reasoning:
+ *     - arrivalTime : when the patient entered the system
+ *     - burstTime   : how long treatment takes
+ *     - priority    : urgency factor — lower priority number = tighter deadline
+ *                     (priority 1 patient gets a tighter deadline than priority 5)
+ *
+ *   This produces a meaningful deadline without adding a new DB field,
+ *   and maps cleanly to the OS EDF concept for the simulation.
  *
  * Logic (unit-step simulation):
- *   1. At each time unit, pick the available patient with the lowest priority number.
- *   2. Run for 1 unit.
- *   3. Track context switches and merge Gantt segments accordingly.
+ *   1. At each time unit, collect all arrived patients with remaining time > 0.
+ *   2. Select the one with the earliest (smallest) deadline.
+ *   3. Run for 1 time unit.
+ *   4. Track context switches and merge Gantt segments.
  */
-@Component("PREEMPTIVE_PRIORITY")
-public class PrioritySchedulingStrategy implements SchedulingStrategy {
+@Component("EDF")
+public class EDFStrategy implements SchedulingStrategy {
 
-    private static final String ALGORITHM_NAME = "PREEMPTIVE_PRIORITY";
+    private static final String ALGORITHM_NAME = "EDF";
 
     @Override
     public String getAlgorithmName() {
@@ -47,6 +64,12 @@ public class PrioritySchedulingStrategy implements SchedulingStrategy {
 
         Map<Long, Integer> firstExecution = new HashMap<>();
         Map<Long, Integer> completionTime = new HashMap<>();
+        Map<Long, Integer> deadlineMap    = new HashMap<>();
+
+        // Pre-calculate deadlines for all patients
+        for (Patient p : patients) {
+            deadlineMap.put(p.getId(), calculateDeadline(p));
+        }
 
         int     currentTime = 0;
         Patient lastPatient = null;
@@ -54,7 +77,7 @@ public class PrioritySchedulingStrategy implements SchedulingStrategy {
 
         while (!remaining.isEmpty()) {
 
-            // ── Available patients ────────────────────────────
+            // ── Collect available patients ────────────────────
             final int t = currentTime;
             List<Patient> available = new ArrayList<>();
             for (Patient p : remaining) {
@@ -62,6 +85,7 @@ public class PrioritySchedulingStrategy implements SchedulingStrategy {
             }
 
             if (available.isEmpty()) {
+                // CPU idle — close any open Gantt segment
                 if (lastPatient != null) {
                     ganttEntries.add(new GanttEntryDTO(
                             lastPatient.getId(), lastPatient.getName(),
@@ -72,10 +96,13 @@ public class PrioritySchedulingStrategy implements SchedulingStrategy {
                 continue;
             }
 
-            // ── Pick highest priority (lowest number) ─────────
-            // Tie-break: lower arrival time wins
+            // ── Pick patient with earliest deadline ───────────
+            // Tie-break 1: shorter remaining time (closer to finishing)
+            // Tie-break 2: earlier arrival time
             Patient current = available.stream()
-                    .min(Comparator.comparingInt(Patient::getPriority)
+                    .min(Comparator
+                            .comparingInt((Patient p) -> deadlineMap.get(p.getId()))
+                            .thenComparingInt(Patient::getRemainingTime)
                             .thenComparingInt(Patient::getArrivalTime))
                     .orElseThrow();
 
@@ -83,12 +110,14 @@ public class PrioritySchedulingStrategy implements SchedulingStrategy {
             if (lastPatient == null) {
                 segStart = currentTime;
             } else if (!lastPatient.getId().equals(current.getId())) {
+                // Different patient taking over — close previous segment
                 ganttEntries.add(new GanttEntryDTO(
                         lastPatient.getId(), lastPatient.getName(),
                         segStart, currentTime, ALGORITHM_NAME));
                 segStart = currentTime;
             }
 
+            // Record first time this patient touched the CPU
             firstExecution.putIfAbsent(current.getId(), currentTime);
 
             // ── Execute 1 time unit ───────────────────────────
@@ -96,7 +125,9 @@ public class PrioritySchedulingStrategy implements SchedulingStrategy {
             currentTime++;
             lastPatient = current;
 
+            // ── Check if patient finished ─────────────────────
             if (current.getRemainingTime() == 0) {
+                // Close the Gantt segment
                 ganttEntries.add(new GanttEntryDTO(
                         current.getId(), current.getName(),
                         segStart, currentTime, ALGORITHM_NAME));
@@ -121,6 +152,10 @@ public class PrioritySchedulingStrategy implements SchedulingStrategy {
             int rt = firstExecution.getOrDefault(patient.getId(), 0)
                     - patient.getArrivalTime();
 
+            // Guard against negative values
+            wt = Math.max(0, wt);
+            rt = Math.max(0, rt);
+
             totalWaiting    += wt;
             totalTurnaround += tt;
             totalResponse   += rt;
@@ -144,5 +179,25 @@ public class PrioritySchedulingStrategy implements SchedulingStrategy {
         result.setGanttEntries(ganttEntries);
 
         return result;
+    }
+
+    // ── Deadline Formula ──────────────────────────────────────
+
+    /**
+     * Derives a deadline for each patient from existing fields.
+     *
+     * deadline = arrivalTime + burstTime + priority
+     *
+     * Lower priority number = more critical = tighter deadline.
+     * Example:
+     *   Patient A: arrival=0, burst=5, priority=1 → deadline = 6
+     *   Patient B: arrival=0, burst=5, priority=4 → deadline = 9
+     *   EDF picks Patient A first (deadline 6 < 9).
+     *
+     * @param patient the patient to compute deadline for
+     * @return        integer deadline value
+     */
+    private int calculateDeadline(Patient patient) {
+        return patient.getArrivalTime() + patient.getBurstTime() + patient.getPriority();
     }
 }
