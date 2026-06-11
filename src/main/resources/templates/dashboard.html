@@ -1,142 +1,198 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <link rel="stylesheet" th:href="@{/css/global.css}">
     <meta charset="UTF-8">
-    <title>Dashboard - MediCore</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; background: #f0f2f5; }
-        nav { background: #2c3e50; padding: 14px 30px; display: flex; gap: 20px; align-items: center; }
-        nav a { color: white; text-decoration: none; font-size: 0.95rem; }
-        nav a:hover { text-decoration: underline; }
-        nav .brand { font-weight: bold; font-size: 1.1rem; margin-right: auto; }
-        .page { padding: 30px; max-width: 1100px; margin: auto; }
-        h2 { color: #2c3e50; margin-bottom: 24px; }
-        .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; }
-        .card { background: white; border-radius: 10px; padding: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); border-left: 5px solid #3498db; }
-        .card.er     { border-left-color: #e74c3c; }
-        .card.opd    { border-left-color: #27ae60; }
-        .card.icu    { border-left-color: #f39c12; }
-        .card.surgery{ border-left-color: #8e44ad; }
-        .card h3 { font-size: 1.1rem; color: #2c3e50; margin-bottom: 8px; }
-        .card .algo { font-size: 0.85rem; color: #7f8c8d; margin-bottom: 4px; }
-        .card .count { font-size: 1.8rem; font-weight: bold; color: #2c3e50; margin: 10px 0; }
-        .card .label { font-size: 0.8rem; color: #95a5a6; }
-        .card a { display: inline-block; margin-top: 14px; padding: 8px 16px; background: #3498db; color: white; text-decoration: none; border-radius: 6px; font-size: 0.85rem; }
-        .card.er a     { background: #e74c3c; }
-        .card.opd a    { background: #27ae60; }
-        .card.icu a    { background: #f39c12; }
-        .card.surgery a{ background: #8e44ad; }
-        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 30px; }
-        .stat { background: white; border-radius: 10px; padding: 20px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
-        .stat .num { font-size: 2rem; font-weight: bold; color: #3498db; }
-        .stat .lbl { font-size: 0.85rem; color: #7f8c8d; margin-top: 4px; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard — MediCore</title>
+    <link rel="stylesheet" th:href="@{/css/global.css}" href="/css/global.css">
+    <link rel="stylesheet" th:href="@{/css/dashboard.css}" href="/css/dashboard.css">
 </head>
 <body>
-<nav>
-    <span class="brand">🏥 MediCore</span>
-    <a href="/">Home</a>
-    <a href="/dashboard">Dashboard</a>
-    <a href="/patients">Patients</a>
-    <a href="/simulation">Simulation</a>
-    <a href="/history">History</a>
+
+<div class="ecg-bar"></div>
+
+<nav class="nav">
+    <a href="/" class="nav-brand">
+        <span class="pulse-dot"></span>
+        MediCore
+    </a>
+    <a href="/" class="nav-link">Home</a>
+    <a href="/dashboard" class="nav-link active">Dashboard</a>
+    <a href="/patients" class="nav-link">Patients</a>
+    <a href="/simulation" class="nav-link">Simulation</a>
+    <a href="/history" class="nav-link">History</a>
 </nav>
 
 <div class="page">
-    <h2>📊 Dashboard</h2>
 
-    <!-- Summary Stats -->
-    <div class="stats">
-        <div class="stat">
-            <div class="num" id="totalPatients">-</div>
-            <div class="lbl">Total Patients</div>
+    <div class="section-header">
+        <span class="section-title">Command Center</span>
+        <span class="section-label">System Overview</span>
+    </div>
+
+    <!-- Live status strip -->
+    <div class="live-strip">
+        <span class="live-dot"></span>
+        <span>SYSTEM ONLINE</span>
+        <span style="color:var(--text-dim)">•</span>
+        <span>LAST SYNC <span class="time" id="syncTime">--:--:--</span></span>
+    </div>
+
+    <!-- Top stats -->
+    <div class="stat-grid">
+        <div class="stat-card">
+            <div class="label">Total Patients</div>
+            <div class="value cyan count-up" id="statTotalPatients">0</div>
         </div>
-        <div class="stat">
-            <div class="num" id="totalRuns">-</div>
-            <div class="lbl">Simulations Run</div>
+        <div class="stat-card">
+            <div class="label">Waiting</div>
+            <div class="value amber count-up" id="statWaiting">0</div>
         </div>
-        <div class="stat">
-            <div class="num">4</div>
-            <div class="lbl">Departments</div>
+        <div class="stat-card">
+            <div class="label">Completed Treatments</div>
+            <div class="value emerald count-up" id="statCompleted">0</div>
         </div>
-        <div class="stat">
-            <div class="num">8</div>
-            <div class="lbl">Algorithms</div>
+        <div class="stat-card">
+            <div class="label">Simulations Run</div>
+            <div class="value count-up" id="statRuns">0</div>
         </div>
     </div>
 
-    <!-- Department Cards -->
-    <h2>Departments</h2>
-    <div class="cards">
-        <div class="card er">
-            <h3>🚨 Emergency (ER)</h3>
-            <div class="algo">Preemptive Priority</div>
-            <div class="algo">Multilevel Queue</div>
-            <div class="count" id="erCount">-</div>
-            <div class="label">patients</div>
-            <a href="/patients?dept=ER">View Patients</a>
-        </div>
-        <div class="card opd">
-            <h3>🏥 Outpatient (OPD)</h3>
-            <div class="algo">FCFS</div>
-            <div class="algo">Round Robin</div>
-            <div class="count" id="opdCount">-</div>
-            <div class="label">patients</div>
-            <a href="/patients?dept=OPD">View Patients</a>
-        </div>
-        <div class="card icu">
-            <h3>💉 Intensive Care (ICU)</h3>
-            <div class="algo">SRTF</div>
-            <div class="algo">EDF</div>
-            <div class="count" id="icuCount">-</div>
-            <div class="label">patients</div>
-            <a href="/patients?dept=ICU">View Patients</a>
-        </div>
-        <div class="card surgery">
-            <h3>🔪 Surgery</h3>
-            <div class="algo">SJF</div>
-            <div class="algo">HRRN</div>
-            <div class="count" id="surgeryCount">-</div>
-            <div class="label">patients</div>
-            <a href="/patients?dept=SURGERY">View Patients</a>
-        </div>
+    <!-- Department map -->
+    <div class="section-header">
+        <span class="section-title">Live Map</span>
+        <span class="section-label">Department Status</span>
     </div>
+
+    <div class="map-grid">
+
+        <a href="/patients?dept=ER" class="map-node er">
+            <div class="map-node-header">
+                    <span class="title">
+                        <span class="icon-box">🚨</span>
+                        Emergency
+                    </span>
+                <span class="status-dot busy"></span>
+            </div>
+            <div class="map-node-body">
+                <div class="map-node-row">
+                    <span class="lbl">Queue Size</span>
+                    <span class="val" id="erCount">—</span>
+                </div>
+                <div class="queue-bar"><div class="queue-bar-fill" id="erBar" style="width:0%"></div></div>
+                <div class="map-node-algos">
+                    <span class="algo-chip">Preemptive Priority</span>
+                    <span class="algo-chip">Multilevel Queue</span>
+                </div>
+            </div>
+        </a>
+
+        <a href="/patients?dept=OPD" class="map-node opd">
+            <div class="map-node-header">
+                    <span class="title">
+                        <span class="icon-box">🏥</span>
+                        Outpatient
+                    </span>
+                <span class="status-dot online"></span>
+            </div>
+            <div class="map-node-body">
+                <div class="map-node-row">
+                    <span class="lbl">Queue Size</span>
+                    <span class="val" id="opdCount">—</span>
+                </div>
+                <div class="queue-bar"><div class="queue-bar-fill" id="opdBar" style="width:0%"></div></div>
+                <div class="map-node-algos">
+                    <span class="algo-chip">FCFS</span>
+                    <span class="algo-chip">Round Robin</span>
+                </div>
+            </div>
+        </a>
+
+        <a href="/patients?dept=ICU" class="map-node icu">
+            <div class="map-node-header">
+                    <span class="title">
+                        <span class="icon-box">💉</span>
+                        Intensive Care
+                    </span>
+                <span class="status-dot waiting"></span>
+            </div>
+            <div class="map-node-body">
+                <div class="map-node-row">
+                    <span class="lbl">Queue Size</span>
+                    <span class="val" id="icuCount">—</span>
+                </div>
+                <div class="queue-bar"><div class="queue-bar-fill" id="icuBar" style="width:0%"></div></div>
+                <div class="map-node-algos">
+                    <span class="algo-chip">SRTF</span>
+                    <span class="algo-chip">EDF</span>
+                </div>
+            </div>
+        </a>
+
+        <a href="/patients?dept=SURGERY" class="map-node surgery">
+            <div class="map-node-header">
+                    <span class="title">
+                        <span class="icon-box">🔪</span>
+                        Surgery
+                    </span>
+                <span class="status-dot online"></span>
+            </div>
+            <div class="map-node-body">
+                <div class="map-node-row">
+                    <span class="lbl">Queue Size</span>
+                    <span class="val" id="surgeryCount">—</span>
+                </div>
+                <div class="queue-bar"><div class="queue-bar-fill" id="surgeryBar" style="width:0%"></div></div>
+                <div class="map-node-algos">
+                    <span class="algo-chip">SJF</span>
+                    <span class="algo-chip">HRRN</span>
+                </div>
+            </div>
+        </a>
+
+    </div>
+
+    <!-- Recent activity + quick actions -->
+    <div class="dashboard-grid">
+
+        <div class="panel">
+            <div class="panel-header">Recent Simulations</div>
+            <div class="activity-list" id="activityList">
+                <div class="empty-state">
+                    <div class="icon">📡</div>
+                    Loading recent activity...
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-header">Quick Actions</div>
+            <div style="display:flex; flex-direction:column; gap:12px;">
+                <a href="/patients" class="btn btn-secondary" style="width:100%; justify-content:center;">
+                    + Add Patients
+                </a>
+                <a href="/simulation" class="btn btn-primary" style="width:100%; justify-content:center;">
+                    ▶ Run Simulation
+                </a>
+                <a href="/history" class="btn btn-secondary" style="width:100%; justify-content:center;">
+                    View Full History
+                </a>
+            </div>
+
+            <div class="panel-header" style="margin-top:24px;">Algorithm Reference</div>
+            <div style="font-family:var(--font-mono); font-size:0.78rem; color:var(--text-muted); line-height:2;">
+                <div><span style="color:var(--red)">●</span> ER — Priority / MLQ</div>
+                <div><span style="color:var(--emerald)">●</span> OPD — FCFS / Round Robin</div>
+                <div><span style="color:var(--amber)">●</span> ICU — SRTF / EDF</div>
+                <div><span style="color:var(--purple)">●</span> Surgery — SJF / HRRN</div>
+            </div>
+        </div>
+
+    </div>
+
 </div>
 
-<script>
-    // Load patient counts per department
-    async function loadDashboard() {
-        try {
-            const depts = ['ER', 'OPD', 'ICU', 'SURGERY'];
-            const ids   = ['erCount', 'opdCount', 'icuCount', 'surgeryCount'];
-            let total   = 0;
-
-            for (let i = 0; i < depts.length; i++) {
-                const res  = await fetch(`/api/patients/department/${depts[i]}`);
-                const data = await res.json();
-                document.getElementById(ids[i]).textContent = data.length;
-                total += data.length;
-            }
-            document.getElementById('totalPatients').textContent = total;
-
-            // Load simulation run count
-            const deptTypes = ['ER', 'OPD', 'ICU', 'SURGERY'];
-            let runTotal = 0;
-            for (const dept of deptTypes) {
-                const res  = await fetch(`/api/simulation/history/${dept}`);
-                const data = await res.json();
-                runTotal  += data.length;
-            }
-            document.getElementById('totalRuns').textContent = runTotal;
-
-        } catch (err) {
-            console.error('Dashboard load error:', err);
-        }
-    }
-
-    loadDashboard();
-</script>
+<script th:src="@{/js/global.js}" src="/js/global.js"></script>
+<script th:src="@{/js/dashboard.js}" src="/js/dashboard.js"></script>
 </body>
 </html>

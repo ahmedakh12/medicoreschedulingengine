@@ -1,216 +1,125 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Patients - MediCore</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; background: #f0f2f5; }
-        nav { background: #2c3e50; padding: 14px 30px; display: flex; gap: 20px; align-items: center; }
-        nav a { color: white; text-decoration: none; font-size: 0.95rem; }
-        nav a:hover { text-decoration: underline; }
-        nav .brand { font-weight: bold; font-size: 1.1rem; margin-right: auto; }
-        .page { padding: 30px; max-width: 1100px; margin: auto; }
-        h2 { color: #2c3e50; margin-bottom: 20px; }
-        .layout { display: grid; grid-template-columns: 340px 1fr; gap: 24px; }
-        .card { background: white; border-radius: 10px; padding: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
-        .form-group { margin-bottom: 16px; }
-        label { display: block; font-size: 0.9rem; color: #555; margin-bottom: 6px; }
-        input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.95rem; }
-        input:focus, select:focus { outline: none; border-color: #3498db; }
-        button { width: 100%; padding: 12px; background: #27ae60; color: white; border: none; border-radius: 6px; font-size: 1rem; cursor: pointer; }
-        button:hover { background: #219a52; }
-        .msg { padding: 10px; border-radius: 6px; margin-bottom: 16px; font-size: 0.9rem; display: none; }
-        .msg.success { background: #d5f5e3; color: #1e8449; display: block; }
-        .msg.error   { background: #fadbd8; color: #922b21; display: block; }
-        .filter-row { display: flex; gap: 10px; margin-bottom: 16px; }
-        .filter-row select { width: auto; }
-        .filter-row button { width: auto; padding: 10px 20px; background: #3498db; }
-        .filter-row button:hover { background: #2980b9; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-        th { background: #2c3e50; color: white; padding: 10px 12px; text-align: left; }
-        td { padding: 10px 12px; border-bottom: 1px solid #eee; }
-        tr:hover td { background: #f8f9fa; }
-        .badge { padding: 3px 8px; border-radius: 12px; font-size: 0.78rem; font-weight: bold; }
-        .badge.ER       { background: #fadbd8; color: #922b21; }
-        .badge.OPD      { background: #d5f5e3; color: #1e8449; }
-        .badge.ICU      { background: #fef9e7; color: #7d6608; }
-        .badge.SURGERY  { background: #e8daef; color: #6c3483; }
-        .del-btn { background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
-        .del-btn:hover { background: #c0392b; }
-        .empty { text-align: center; color: #95a5a6; padding: 30px; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patients — MediCore</title>
+    <link rel="stylesheet" th:href="@{/css/global.css}" href="/css/global.css">
+    <link rel="stylesheet" th:href="@{/css/patients.css}" href="/css/patients.css">
 </head>
 <body>
-<nav>
-    <span class="brand">🏥 MediCore</span>
-    <a href="/">Home</a>
-    <a href="/dashboard">Dashboard</a>
-    <a href="/patients">Patients</a>
-    <a href="/simulation">Simulation</a>
-    <a href="/history">History</a>
+
+<div class="ecg-bar"></div>
+
+<nav class="nav">
+    <a href="/" class="nav-brand">
+        <span class="pulse-dot"></span>
+        MediCore
+    </a>
+    <a href="/" class="nav-link">Home</a>
+    <a href="/dashboard" class="nav-link">Dashboard</a>
+    <a href="/patients" class="nav-link active">Patients</a>
+    <a href="/simulation" class="nav-link">Simulation</a>
+    <a href="/history" class="nav-link">History</a>
 </nav>
 
 <div class="page">
-    <h2>👤 Patients</h2>
-    <div class="layout">
+
+    <div class="section-header">
+        <span class="section-title">Patient Registry</span>
+        <span class="section-label">Admit &amp; Manage Patients</span>
+    </div>
+
+    <div class="patients-layout">
 
         <!-- Add Patient Form -->
-        <div class="card">
-            <h3 style="margin-bottom:20px; color:#2c3e50;">Add New Patient</h3>
-            <div class="msg" id="msg"></div>
+        <div class="panel">
+            <div class="panel-header">New Admission</div>
+
+            <div class="alert alert-success" id="successMsg"></div>
+            <div class="alert alert-error" id="errorMsg"></div>
 
             <div class="form-group">
-                <label>Patient Name</label>
-                <input type="text" id="name" placeholder="e.g. John Doe">
+                <label class="form-label">Patient Name</label>
+                <input type="text" class="form-input" id="name" placeholder="e.g. Ayesha Khan">
             </div>
+
             <div class="form-group">
-                <label>Department</label>
-                <select id="departmentType">
+                <label class="form-label">Department</label>
+                <select class="form-select" id="departmentType">
                     <option value="ER">Emergency (ER)</option>
                     <option value="OPD">Outpatient (OPD)</option>
                     <option value="ICU">Intensive Care (ICU)</option>
                     <option value="SURGERY">Surgery</option>
                 </select>
             </div>
+
             <div class="form-group">
-                <label>Arrival Time (time unit)</label>
-                <input type="number" id="arrivalTime" value="0" min="0">
+                <label class="form-label">Arrival Time</label>
+                <input type="number" class="form-input" id="arrivalTime" value="0" min="0">
             </div>
+
             <div class="form-group">
-                <label>Burst Time (treatment duration)</label>
-                <input type="number" id="burstTime" value="1" min="1">
+                <label class="form-label">Burst Time (treatment duration)</label>
+                <input type="number" class="form-input" id="burstTime" value="1" min="1">
             </div>
+
             <div class="form-group">
-                <label>Priority (1 = most critical)</label>
-                <input type="number" id="priority" value="1" min="1">
+                <label class="form-label">Priority</label>
+                <input type="number" class="form-input" id="priority" value="1" min="1">
+                <div class="priority-hint">
+                    <span class="p1">1 — Critical</span>
+                    <span class="p2">2-3 — Urgent</span>
+                    <span class="p4">4+ — Normal</span>
+                </div>
             </div>
-            <button onclick="addPatient()">Add Patient</button>
+
+            <button class="btn btn-primary" style="width:100%; justify-content:center;" onclick="addPatient()">
+                + Admit Patient
+            </button>
         </div>
 
         <!-- Patient List -->
-        <div class="card">
-            <h3 style="margin-bottom:16px; color:#2c3e50;">Patient List</h3>
+        <div class="panel">
+            <div class="panel-header">Patient Queue</div>
+
             <div class="filter-row">
-                <select id="filterDept">
+                <select class="form-select" id="filterDept" onchange="loadPatients()">
                     <option value="ALL">All Departments</option>
-                    <option value="ER">ER</option>
-                    <option value="OPD">OPD</option>
-                    <option value="ICU">ICU</option>
+                    <option value="ER">Emergency (ER)</option>
+                    <option value="OPD">Outpatient (OPD)</option>
+                    <option value="ICU">Intensive Care (ICU)</option>
                     <option value="SURGERY">Surgery</option>
                 </select>
-                <button onclick="loadPatients()">Filter</button>
+                <span class="count-tag"><strong id="patientCount">0</strong> patients</span>
             </div>
-            <table>
-                <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Name</th>
-                    <th>Dept</th>
-                    <th>Arrival</th>
-                    <th>Burst</th>
-                    <th>Priority</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                </tr>
-                </thead>
-                <tbody id="patientTable">
-                <tr><td colspan="8" class="empty">Loading...</td></tr>
-                </tbody>
-            </table>
+
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Name</th>
+                        <th>Dept</th>
+                        <th>Arrival</th>
+                        <th>Burst</th>
+                        <th>Priority</th>
+                        <th>Status</th>
+                        <th></th>
+                    </tr>
+                    </thead>
+                    <tbody id="patientTable">
+                    <tr><td colspan="8"><div class="empty-state">Loading patients...</div></td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
 
     </div>
+
 </div>
 
-<script>
-    async function addPatient() {
-        const msg  = document.getElementById('msg');
-        msg.className = 'msg';
-
-        const body = {
-            name:           document.getElementById('name').value.trim(),
-            departmentType: document.getElementById('departmentType').value,
-            arrivalTime:    parseInt(document.getElementById('arrivalTime').value),
-            burstTime:      parseInt(document.getElementById('burstTime').value),
-            priority:       parseInt(document.getElementById('priority').value)
-        };
-
-        if (!body.name) {
-            msg.textContent = 'Patient name is required.';
-            msg.className   = 'msg error';
-            return;
-        }
-
-        try {
-            const res  = await fetch('/api/patients', {
-                method:  'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body:    JSON.stringify(body)
-            });
-            const data = await res.json();
-
-            if (res.ok) {
-                msg.textContent = `Patient "${data.name}" added successfully!`;
-                msg.className   = 'msg success';
-                document.getElementById('name').value = '';
-                loadPatients();
-            } else {
-                msg.textContent = data || 'Failed to add patient.';
-                msg.className   = 'msg error';
-            }
-        } catch (err) {
-            msg.textContent = 'Server error. Is the backend running?';
-            msg.className   = 'msg error';
-        }
-    }
-
-    async function loadPatients() {
-        const dept  = document.getElementById('filterDept').value;
-        const tbody = document.getElementById('patientTable');
-        tbody.innerHTML = '<tr><td colspan="8" class="empty">Loading...</td></tr>';
-
-        try {
-            const url = dept === 'ALL'
-                ? '/api/patients'
-                : `/api/patients/department/${dept}`;
-
-            const res   = await fetch(url);
-            const data  = await res.json();
-
-            if (data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="empty">No patients found.</td></tr>';
-                return;
-            }
-
-            tbody.innerHTML = data.map((p, i) => `
-                <tr>
-                    <td>${i + 1}</td>
-                    <td>${p.name}</td>
-                    <td><span class="badge ${p.departmentType}">${p.departmentType}</span></td>
-                    <td>${p.arrivalTime}</td>
-                    <td>${p.burstTime}</td>
-                    <td>${p.priority}</td>
-                    <td>${p.status}</td>
-                    <td><button class="del-btn" onclick="deletePatient(${p.id})">Delete</button></td>
-                </tr>
-            `).join('');
-        } catch (err) {
-            tbody.innerHTML = '<tr><td colspan="8" class="empty">Failed to load patients.</td></tr>';
-        }
-    }
-
-    async function deletePatient(id) {
-        if (!confirm('Delete this patient?')) return;
-        await fetch(`/api/patients/${id}`, { method: 'DELETE' });
-        loadPatients();
-    }
-
-    // Pre-select department from URL param if present
-    const urlDept = new URLSearchParams(window.location.search).get('dept');
-    if (urlDept) document.getElementById('filterDept').value = urlDept;
-
-    loadPatients();
-</script>
+<script th:src="@{/js/global.js}" src="/js/global.js"></script>
+<script th:src="@{/js/patients.js}" src="/js/patients.js"></script>
 </body>
 </html>
