@@ -1,5 +1,6 @@
 package com.medicoreschedulingengine.os.model.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.medicoreschedulingengine.os.model.enums.DepartmentType;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -44,6 +45,7 @@ public class SimulationRun {
 
     // ── Relations ─────────────────────────────────────────────
 
+    @JsonIgnore
     @OneToMany(mappedBy = "simulationRun", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<ExecutionLog> executionLogs = new ArrayList<>();
 

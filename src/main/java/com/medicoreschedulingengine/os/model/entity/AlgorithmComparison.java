@@ -15,11 +15,11 @@ public class AlgorithmComparison {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "simulation_run_id_1", nullable = false)
     private SimulationRun simulationRun1;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "simulation_run_id_2", nullable = false)
     private SimulationRun simulationRun2;
 
