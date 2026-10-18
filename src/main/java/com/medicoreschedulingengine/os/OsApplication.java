@@ -11,3 +11,7 @@ public class OsApplication {
 	}
 
 }
+
+	public static void main(String[] args) {
+		System.out.println("GitHub Lab 02");
+	}
